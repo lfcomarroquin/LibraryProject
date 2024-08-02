@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.api.libraryproject.util.BookStatus;
 
-import java.awt.print.Book;
 import java.util.List;
 
 @Service
@@ -25,7 +24,23 @@ public class BooksService {
     public BooksDto getBookById(String bookId) {
         return this.booksRepository.findById(bookId)
                 .map(this::convertToDto)
-                .orElse(null);
+                .orElseThrow(() -> new IllegalArgumentException("No se encontro un libro con el ID: " + bookId));
+    }
+
+    public List<BooksDto> getBooksByTitle(String title) {
+        List<BooksDto> books = booksRepository.findByTitle(title);
+        if(books.isEmpty()){
+            throw new IllegalArgumentException("No se encontraron libros con el titulo: " + title);
+        }
+        return books;
+    }
+
+    public List<BooksDto> getBooksByAuthor(String author) {
+        List<BooksDto> books = booksRepository.findByAuthor(author);
+        if(books.isEmpty()){
+            throw new IllegalArgumentException("No se encontraron libros del autor: " + author);
+        }
+        return books;
     }
 
     public BooksDto addBook(BooksDto bookDto) {
@@ -52,6 +67,12 @@ public class BooksService {
         BooksDto updatedBookDto = this.convertToDto(updatedBookEntity);
 
         return updatedBookDto;
+    }
+
+    public void delete(String id) {
+        BooksEntity booksEntity = this.booksRepository.findById(id)
+                .orElse(null);
+        this.booksRepository.delete(booksEntity);
     }
 
     private BooksDto convertToDto(BooksEntity booksEntity) {

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -132,6 +133,18 @@ public class UsersServiceTest {
 
         //Validacion
         verify(libraryRepository).delete(user);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDatabaseErrorOccurs() {
+        //Preparacion
+        String email = "test@example.com";
+
+        //Ejecucion
+        when(libraryRepository.findByEmail(email)).thenThrow(new DataAccessException("Error accediendo a la base de datos") {});
+
+        //Validacion
+        assertThrows(DataAccessException.class, () -> usersService.findUserByEmail(email));
     }
 
 }

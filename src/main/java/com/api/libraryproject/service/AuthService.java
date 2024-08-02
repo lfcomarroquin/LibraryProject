@@ -33,7 +33,7 @@ public class AuthService {
 
     public AuthDto login (final LoginDto request) {
         if (!areValidCredentials(request)) {
-            throw new InvalidCredentialsException("Username o password incorrectos.");
+            throw new InvalidCredentialsException("Username o password incorrectos. Contacta a algun empleado de la biblioteca si necesitas reinicio de password.");
         }
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
         UserDetails user = libraryRepository.findByEmail(request.getUsername()).orElseThrow();

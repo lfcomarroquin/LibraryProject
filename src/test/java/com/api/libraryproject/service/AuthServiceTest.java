@@ -58,7 +58,7 @@ class AuthServiceTest {
 
     @Test
     void loginWithValidCredentialsShouldReturnToken() {
-        // Given
+        //Preparacion
         String expectedToken = "token";
         LoginDto request = new LoginDto(user.getEmail(), user.getPassword());
 
@@ -66,49 +66,51 @@ class AuthServiceTest {
         given(passwordEncoder.matches(anyString(), anyString())).willReturn(true);
         given(jwtService.getToken(any())).willReturn(expectedToken);
 
-        // When
+        //Ejecicion
         AuthDto result = authService.login(request);
 
-        // Then
+        //Validacion
         assertEquals(expectedToken, result.getToken());
     }
 
     @Test
     void loginWithInvalidCredentialsShouldThrowException() {
-        // Given
+        //Preparacion
         LoginDto request = new LoginDto(user.getEmail(), "wrongPassword");
 
+        //Ejecucion
         given(libraryRepository.findByEmail(user.getEmail())).willReturn(Optional.of(user));
         given(passwordEncoder.matches(anyString(), anyString())).willReturn(false);
 
-        // When & Then
+        //Validacion
         assertThrows(InvalidCredentialsException.class, () -> authService.login(request));
     }
 
     @Test
     void registerWithValidDetailsShouldReturnSuccessMessage() {
-        // Given
+        //Preparacion
         RegisterDto request = new RegisterDto(user.getName(), user.getEmail(), user.getPassword());
         String expectedMessage = "El usuario ha sido creado exitosamente";
 
         given(libraryRepository.findByEmail(user.getEmail())).willReturn(Optional.empty());
         given(passwordEncoder.encode(user.getPassword())).willReturn("encodedPassword");
 
-        // When
+        //Ejecucion
         AuthDto result = authService.register(request);
 
-        // Then
+        //Validacion
         assertEquals(expectedMessage, result.getToken());
     }
 
     @Test
     void registerWithExistingUserShouldThrowException() {
-        // Given
+        //Preparacion
         RegisterDto request = new RegisterDto(user.getName(), user.getEmail(), user.getPassword());
 
+        //Ejecucion
         given(libraryRepository.findByEmail(user.getEmail())).willReturn(Optional.of(user));
 
-        // When & Then
+        //Validacion
         assertThrows(RegisterException.class, () -> authService.register(request));
     }
 

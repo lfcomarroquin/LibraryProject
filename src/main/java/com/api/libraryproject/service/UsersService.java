@@ -26,6 +26,12 @@ public class UsersService {
                 .orElse(null);
     }
 
+    public UsersDto findUserByEmail(String email) {
+        return this.libraryRepository.findByEmail(email)
+                .map(this::toDto)
+                .orElse(null);
+    }
+
     public UsersDto save(UsersDto school) {
         UsersEntity entity = new UsersEntity();
         entity.setName(school.getName());

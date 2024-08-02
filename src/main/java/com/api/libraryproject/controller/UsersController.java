@@ -9,13 +9,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/school")
+@RequestMapping("/libraryusers")
 public class UsersController {
 
     @Autowired
     private UsersService usersService;
 
-    @GetMapping("/query")
+    @GetMapping("/findall")
     public ResponseEntity<List<UsersDto>> findAllStudents() {
         List<UsersDto> listStudents = this.usersService.getAll();
         return ResponseEntity.ok(listStudents);
