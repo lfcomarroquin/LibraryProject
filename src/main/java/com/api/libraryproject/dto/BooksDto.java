@@ -12,12 +12,18 @@ public class BooksDto {
 
     private String status;
 
-    public BooksDto(String bookId, String title, String author, String description, String status) {
+    private String reservedBy;
+
+    private String borrowedBy;
+
+    public BooksDto(String bookId, String title, String author, String description, String status, String reservedBy, String borrowedBy) {
         this.bookId = bookId;
         this.title = title;
         this.author = author;
         this.description = description;
         this.status = status;
+        this.reservedBy = reservedBy;
+        this.borrowedBy = borrowedBy;
     }
 
     public BooksDto() {
@@ -62,6 +68,22 @@ public class BooksDto {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getReservedBy() {
+        return reservedBy;
+    }
+
+    public void setReservedBy(String reservedBy) {
+        this.reservedBy = reservedBy;
+    }
+
+    public String getBorrowedBy() {
+        return borrowedBy;
+    }
+
+    public void setBorrowedBy(String borrowedBy) {
+        this.borrowedBy = borrowedBy;
     }
 
 }

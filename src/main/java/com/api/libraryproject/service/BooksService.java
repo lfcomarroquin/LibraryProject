@@ -39,19 +39,31 @@ public class BooksService {
         return savedBookDto;
     }
 
-    public BooksDto updateBookStatus(String bookId, BookStatus status) {
+    public BooksDto updateBookStatus(String bookId, BooksDto bookDto) {
         BooksEntity bookEntity = this.booksRepository.findById(bookId)
-                .orElseThrow(() -> new IllegalArgumentException("Book not found with ID: " + bookId));
+                .orElseThrow(() -> new IllegalArgumentException("Libro con ID: " + bookId + " no encontrado"));
 
-        bookEntity.setStatus(status);
+        bookEntity.setStatus(BookStatus.valueOf(bookDto.getStatus()));
+        bookEntity.setReservedBy(bookDto.getReservedBy());
+        bookEntity.setBorrowedBy(bookDto.getBorrowedBy());
 
         BooksEntity updatedBookEntity = this.booksRepository.save(bookEntity);
+
         BooksDto updatedBookDto = this.convertToDto(updatedBookEntity);
+
         return updatedBookDto;
     }
 
     private BooksDto convertToDto(BooksEntity booksEntity) {
-        return new BooksDto(booksEntity.getBookId(), booksEntity.getTitle(), booksEntity.getAuthor(), booksEntity.getDescription(), booksEntity.getStatus().toString());
+        return new BooksDto(
+                booksEntity.getBookId(),
+                booksEntity.getTitle(),
+                booksEntity.getAuthor(),
+                booksEntity.getDescription(),
+                booksEntity.getStatus().toString(),
+                booksEntity.getReservedBy(),
+                booksEntity.getBorrowedBy()
+        );
     }
 
 }

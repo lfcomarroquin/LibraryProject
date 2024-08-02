@@ -15,10 +15,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class SchoolControllerTest {
+public class UsersControllerTest {
 
     @InjectMocks
-    private SchoolController schoolController;
+    private UsersController usersController;
 
     @Mock
     private UsersService usersService;
@@ -39,7 +39,7 @@ public class SchoolControllerTest {
         when(usersService.getAll()).thenReturn(Arrays.asList(user1, user2));
 
         //Ejecucion
-        List<UsersDto> students = schoolController.findAllStudents().getBody();
+        List<UsersDto> students = usersController.findAllStudents().getBody();
 
         //Validacion
         assertNotNull(students);
@@ -59,7 +59,7 @@ public class SchoolControllerTest {
         when(usersService.getById("1")).thenReturn(user);
 
         //Ejecucion
-        UsersDto foundUser = schoolController.findById("1").getBody();
+        UsersDto foundUser = usersController.findById("1").getBody();
 
         //Validacion
         assertNotNull(foundUser);
@@ -82,7 +82,7 @@ public class SchoolControllerTest {
         when(usersService.save(studentDto)).thenReturn(savedStudentDto);
 
         //Ejecucion
-        UsersDto savedStudent = schoolController.saveStudent(studentDto).getBody();
+        UsersDto savedStudent = usersController.saveStudent(studentDto).getBody();
 
         //Validacion
         assertNotNull(savedStudent);
@@ -108,7 +108,7 @@ public class SchoolControllerTest {
         when(usersService.update(studentDto, id)).thenReturn(updatedStudentDto);
 
         //Ejecucion
-        UsersDto responseStudent = schoolController.updateStudent(studentDto, id).getBody();
+        UsersDto responseStudent = usersController.updateStudent(studentDto, id).getBody();
 
         //Validacion
         assertNotNull(responseStudent);
@@ -123,7 +123,7 @@ public class SchoolControllerTest {
         String id = "1";
 
         //Ejecucion
-        schoolController.deleteStudent(id);
+        usersController.deleteStudent(id);
 
         //Validacion
         verify(usersService, times(1)).delete(id);
