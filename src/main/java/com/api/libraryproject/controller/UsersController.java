@@ -1,9 +1,18 @@
 package com.api.libraryproject.controller;
 
 import com.api.libraryproject.dto.UsersDto;
+import com.api.libraryproject.entity.UsersEntity;
+import com.api.libraryproject.exceptions.ApiErrorResponse;
+import com.api.libraryproject.exceptions.UsersException;
+import com.api.libraryproject.repository.LibraryRepository;
 import com.api.libraryproject.service.UsersService;
+import com.api.libraryproject.util.Role;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,35 +24,102 @@ public class UsersController {
     @Autowired
     private UsersService usersService;
 
-    @GetMapping("/findall")
-    public ResponseEntity<List<UsersDto>> findAllStudents() {
-        List<UsersDto> listStudents = this.usersService.getAll();
-        return ResponseEntity.ok(listStudents);
+    @Autowired
+    private LibraryRepository libraryRepository;
+
+    @GetMapping("/listall")
+    public ResponseEntity<?> findAllUsers() {
+        try {
+            UserDetails userDetails = (UserDetails) SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getPrincipal();
+
+            UsersEntity user = libraryRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("No se encontro al usuario con el correo: " + userDetails.getUsername()));
+
+            if (user.getRole() != Role.ADMIN) {
+                throw new IllegalArgumentException("Solo los empleados de la biblioteca pueden acceder a la lista de usuarios.");
+            }
+
+            List<UsersDto> listUsers = this.usersService.getAll();
+            return ResponseEntity.ok().body(listUsers);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<UsersDto> findById(@PathVariable("id") String id) {
-        UsersDto student = this.usersService.getById(id);
-        return ResponseEntity.ok(student);
+    @GetMapping("/{id}/id")
+    public ResponseEntity<?> findUserById(@PathVariable("id") String id) {
+        try {
+            UserDetails userDetails = (UserDetails) SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getPrincipal();
+
+            UsersEntity user = libraryRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("No se encontro al usuario con el correo: " + userDetails.getUsername()));
+
+            if (user.getRole() != Role.ADMIN) {
+                throw new IllegalArgumentException("Solo los empleados de la biblioteca pueden acceder a la lista de usuarios.");
+            }
+
+            UsersDto usersDto = this.usersService.getById(id);
+            return ResponseEntity.ok(usersDto);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
     }
 
-    @PostMapping("/")
-    public ResponseEntity<UsersDto> saveStudent(@RequestBody UsersDto studentDto) {
-        UsersDto savedStudent = this.usersService.save(studentDto);
-        return ResponseEntity.ok(savedStudent);
+    @PutMapping("/{id}/update")
+    public ResponseEntity<?> updateUser(@RequestBody UsersDto usersDto, @PathVariable("id") String id) {
+        try {
+            UserDetails userDetails = (UserDetails) SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getPrincipal();
+
+            UsersEntity user = libraryRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("No se encontro al usuario con el correo: " + userDetails.getUsername()));
+
+            if (user.getRole() != Role.ADMIN) {
+                throw new IllegalArgumentException("Solo los empleados de la biblioteca pueden acceder a la lista de usuarios.");
+            }
+
+            UsersDto updatedUser = this.usersService.update(usersDto, id);
+            return ResponseEntity.ok(updatedUser);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<UsersDto> updateStudent(@RequestBody UsersDto studentDto, @PathVariable("id") String id) {
-        UsersDto updatedStudent = this.usersService.update(studentDto, id);
-        return ResponseEntity.ok(updatedStudent);
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<String> deleteUser(@PathVariable("id") String id) {
+        try {
+            UserDetails userDetails = (UserDetails) SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getPrincipal();
+
+            UsersEntity user = libraryRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("No se encontro al usuario con el correo: " + userDetails.getUsername()));
+
+            if (user.getRole() != Role.ADMIN) {
+                throw new IllegalArgumentException("Solo los empleados de la biblioteca pueden acceder a la lista de usuarios.");
+            }
+
+            this.usersService.delete(id);
+            String mensaje = "El usuario con ID " + id + " ha sido eliminado correctamente.";
+            return ResponseEntity.ok(mensaje);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteStudent(@PathVariable("id") String id) {
-        this.usersService.delete(id);
-        String mensaje = "El usuario con ID " + id + " ha sido eliminado correctamente.";
-        return ResponseEntity.ok(mensaje);
+    @ExceptionHandler({UsersException.class})
+    public ResponseEntity<?> handleUsersException(UsersException ex) {
+        ApiErrorResponse apiErrorResponse = new ApiErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+        return new ResponseEntity<>(apiErrorResponse, apiErrorResponse.getStatus());
     }
 
 }

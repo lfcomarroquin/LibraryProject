@@ -20,9 +20,13 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping(value = "/login")
-    public ResponseEntity<AuthDto> login(@RequestBody LoginDto login) {
-        AuthDto authDto = this.authService.login(login);
-        return ResponseEntity.ok(authDto);
+    public ResponseEntity<?> login(@RequestBody LoginDto login) {
+        try {
+            AuthDto authDto = this.authService.login(login);
+            return ResponseEntity.ok(authDto);
+        } catch (InvalidCredentialsException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
     }
 
     @PostMapping("/register")
@@ -31,20 +35,13 @@ public class AuthController {
             AuthDto authDto = this.authService.register(dto);
             return ResponseEntity.ok(authDto);
         } catch (RegisterException ex) {
-            ApiErrorResponse apiErrorResponse = new ApiErrorResponse(
-                    HttpStatus.BAD_REQUEST,
-                    ex.getMessage()
-            );
-            return new ResponseEntity<>(apiErrorResponse, apiErrorResponse.getStatus());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
         }
     }
 
     @ExceptionHandler({ InvalidCredentialsException.class })
     public ResponseEntity<Object> handleInvalidCredentialsException(InvalidCredentialsException ex) {
-        ApiErrorResponse apiErrorResponse = new ApiErrorResponse(
-                HttpStatus.UNAUTHORIZED,
-                ex.getMessage()
-        );
+        ApiErrorResponse apiErrorResponse = new ApiErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
         return new ResponseEntity<>(apiErrorResponse, apiErrorResponse.getStatus());
     }
 

@@ -39,7 +39,7 @@ public class UsersControllerTest {
         when(usersService.getAll()).thenReturn(Arrays.asList(user1, user2));
 
         //Ejecucion
-        List<UsersDto> students = usersController.findAllStudents().getBody();
+        List<UsersDto> students = usersController.findAllUsers().getBody();
 
         //Validacion
         assertNotNull(students);
@@ -65,30 +65,6 @@ public class UsersControllerTest {
         assertNotNull(foundUser);
         assertEquals("Luis", foundUser.getName());
         assertEquals("luis@example.com", foundUser.getEmail());
-    }
-
-    @Test
-    public void createStudentShouldWork() {
-        //Preparacion
-        UsersDto studentDto = new UsersDto();
-        studentDto.setName("Luis");
-        studentDto.setEmail("luis@example.com");
-
-        UsersDto savedStudentDto = new UsersDto();
-        savedStudentDto.setId("1");
-        savedStudentDto.setName("Luis");
-        savedStudentDto.setEmail("luis@example.com");
-
-        when(usersService.save(studentDto)).thenReturn(savedStudentDto);
-
-        //Ejecucion
-        UsersDto savedStudent = usersController.saveStudent(studentDto).getBody();
-
-        //Validacion
-        assertNotNull(savedStudent);
-        assertEquals("1", savedStudent.getId());
-        assertEquals("Luis", savedStudent.getName());
-        assertEquals("luis@example.com", savedStudent.getEmail());
     }
 
     @Test

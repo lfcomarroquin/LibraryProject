@@ -3,6 +3,7 @@ package com.api.libraryproject.service;
 import com.api.libraryproject.dto.UsersDto;
 import com.api.libraryproject.entity.UsersEntity;
 import com.api.libraryproject.repository.LibraryRepository;
+import com.api.libraryproject.util.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -59,6 +60,14 @@ public class UsersService {
 
     private UsersDto toDto(UsersEntity entity) {
         return new UsersDto(entity.getId(), entity.getName(), entity.getEmail());
+    }
+
+    public boolean isAdmin(String email) {
+        UsersEntity user = libraryRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return false;
+        }
+        return user.getRole() == Role.ADMIN;
     }
 
 }

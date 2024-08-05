@@ -66,96 +66,107 @@ public class BooksController {
 
     @PostMapping("/NewBook")
     public ResponseEntity<?> createBook(@RequestBody BooksDto book) {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
 
-        UsersEntity user = libraryRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "No se encontró al usuario con el correo: " + userDetails.getUsername()
-                ));
+        try {
+            UserDetails userDetails = (UserDetails) SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getPrincipal();
 
-        if (user.getRole() != Role.ADMIN) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Solo los empleados de la biblioteca pueden registrar libros nuevos."
-            );
+            UsersEntity user = libraryRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new UsernameNotFoundException("No se encontro al usuario con el correo: " + userDetails.getUsername()));
+
+            if (user.getRole() != Role.ADMIN) {
+                throw new IllegalArgumentException("Solo los empleados de la biblioteca pueden registrar libros nuevos.");
+            }
+
+            BooksDto savedBook = this.booksService.addBook(book);
+            return new ResponseEntity<>(savedBook, HttpStatus.CREATED);
+
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
-
-        BooksDto savedBook = this.booksService.addBook(book);
-        return new ResponseEntity<>(savedBook, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<BooksDto> updateBookStatus(
+    public ResponseEntity<?> updateBookStatus(
             @PathVariable("id") String id,
             @RequestBody BooksDto book) {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
-        String userEmail = userDetails.getUsername();
-
-        UsersEntity user = libraryRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(
-                        () -> new UsernameNotFoundException("No se encontró al usuario con el correo: " + userDetails.getUsername())
-                );
 
         try {
-            BookStatus.valueOf(book.getStatus());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Ingresa un status valido. Los status válidos son DISPONIBLE, RESERVADO, o PRESTADO.");
-        }
+            UserDetails userDetails = (UserDetails) SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getPrincipal();
+            String userEmail = userDetails.getUsername();
 
-        BooksDto currentBook = this.booksService.getBookById(id);
+            UsersEntity user = libraryRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new UsernameNotFoundException("No se encontró al usuario con el correo: " + userDetails.getUsername()));
 
-        if (user.getRole() == Role.USER && currentBook.getStatus().equals(BookStatus.RESERVADO.toString())) {
-            throw new IllegalArgumentException("Los usuarios no pueden cambiar el estado de un libro ya reservado.");
-        }
-
-        if (user.getRole() == Role.USER && !book.getStatus().equals(BookStatus.RESERVADO.toString())) {
-            throw new IllegalArgumentException("Los usuarios solo pueden reservar. Usa el status: RESERVADO.");
-        }
-
-        if (book.getStatus().equals(BookStatus.RESERVADO.toString())) {
-            book.setReservedBy(userEmail);
-        } else if (book.getStatus().equals(BookStatus.PRESTADO.toString())) {
-            if (currentBook.getStatus().equals(BookStatus.RESERVADO.toString())) {
-                book.setReservedBy(currentBook.getReservedBy());
+            try{
+                BookStatus.valueOf(book.getStatus());
+            } catch (IllegalArgumentException e){
+                throw new IllegalArgumentException("Ingresa un status valido. Los status validos son: DISPONIBLE, RESERVADO, PRESTADO.");
             }
-            book.setBorrowedBy(userEmail);
-        }
 
-        BooksDto updatedBook = this.booksService.updateBookStatus(id, book);
-        return ResponseEntity.ok(updatedBook);
+
+            BooksDto currentBook = this.booksService.getBookById(id);
+
+            if (user.getRole() == Role.USER && currentBook.getStatus().equals(BookStatus.RESERVADO.toString())) {
+                throw new IllegalArgumentException("Los usuarios no pueden cambiar el estado de un libro ya reservado.");
+            }
+
+            if (user.getRole() == Role.USER && !book.getStatus().equals(BookStatus.RESERVADO.toString())) {
+                throw new IllegalArgumentException("Los usuarios solo pueden reservar. Usa el status: RESERVADO.");
+            }
+
+            if (book.getStatus().equals(BookStatus.RESERVADO.toString())) {
+                book.setReservedBy(userEmail);
+            } else if (book.getStatus().equals(BookStatus.PRESTADO.toString())) {
+                if (currentBook.getStatus().equals(BookStatus.RESERVADO.toString())) {
+                    book.setReservedBy(currentBook.getReservedBy());
+                }
+                book.setBorrowedBy(userEmail);
+            }
+
+            BooksDto updatedBook = this.booksService.updateBookStatus(id, book);
+            return ResponseEntity.ok(updatedBook);
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}/deletebook")
-    public ResponseEntity<String> deleteBook(@PathVariable("id") String id) {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
-
-        UsersEntity user = libraryRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(
-                        () -> new UsernameNotFoundException("No se encontró al usuario con el correo: " + userDetails.getUsername())
-                );
-
-        if (user.getRole() != Role.ADMIN) {
-            throw new IllegalArgumentException("Solo los empleados de la biblioteca pueden borrar libros.");
-        }
-
+    public ResponseEntity<?> deleteBook(@PathVariable("id") String id) {
         try {
-            this.booksService.delete(id);
-        } catch (EmptyResultDataAccessException e) {
-            throw new IllegalArgumentException("No se encontró un libro con el ID: " + id);
-        }
+            UserDetails userDetails = (UserDetails) SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getPrincipal();
 
-        String message = "El libro con ID " + id + " ha sido eliminado correctamente.";
-        return ResponseEntity.ok(message);
+            UsersEntity user = libraryRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new UsernameNotFoundException("No se encontró al usuario con el correo: " + userDetails.getUsername()));
+
+            if (user.getRole() != Role.ADMIN) {
+                throw new IllegalArgumentException("Solo los empleados de la biblioteca pueden borrar libros.");
+            }
+
+            this.booksService.delete(id);
+
+            return ResponseEntity.ok("El libro con ID " + id + " ha sido eliminado correctamente.");
+
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (EmptyResultDataAccessException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se encontró un libro con el ID: " + id);
+        }
     }
 
 }
