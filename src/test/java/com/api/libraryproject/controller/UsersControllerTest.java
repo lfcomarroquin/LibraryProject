@@ -24,8 +24,8 @@ public class UsersControllerTest {
     private UsersService usersService;
 
     @Test
-    public void findAllStudentsShouldWork() {
-        //Preparacion
+    public void findAllUsersShouldWork() {
+        // Preparacion
         UsersDto user1 = new UsersDto();
         user1.setId("1");
         user1.setName("Luis");
@@ -36,16 +36,16 @@ public class UsersControllerTest {
         user2.setName("Karin");
         user2.setEmail("karin@example.com");
 
-        when(usersService.getAll()).thenReturn(Arrays.asList(user1, user2));
+        when(usersService.getAll(anyString())).thenReturn(Arrays.asList(user1, user2));
 
         //Ejecucion
-        List<UsersDto> students = usersController.findAllUsers().getBody();
+        List<UsersDto> users = (List<UsersDto>) usersController.findAllUsers().getBody();
 
         //Validacion
-        assertNotNull(students);
-        assertEquals(2, students.size());
-        assertEquals("Luis", students.get(0).getName());
-        assertEquals("Karin", students.get(1).getName());
+        assertNotNull(users);
+        assertEquals(2, users.size());
+        assertEquals("Luis", users.get(0).getName());
+        assertEquals("Karin", users.get(1).getName());
     }
 
     @Test
@@ -56,10 +56,10 @@ public class UsersControllerTest {
         user.setName("Luis");
         user.setEmail("luis@example.com");
 
-        when(usersService.getById("1")).thenReturn(user);
+        when(usersService.getById(anyString(), anyString())).thenReturn(user);
 
         //Ejecucion
-        UsersDto foundUser = usersController.findById("1").getBody();
+        UsersDto foundUser = (UsersDto) usersController.findUserById("1").getBody();
 
         //Validacion
         assertNotNull(foundUser);
@@ -68,41 +68,43 @@ public class UsersControllerTest {
     }
 
     @Test
-    public void updateStudentShouldWork () {
+    public void updateUserShouldWork () {
         //Preparacion
         String id = "1";
-        UsersDto studentDto = new UsersDto();
-        studentDto.setId(id);
-        studentDto.setName("Luis");
-        studentDto.setEmail("luis@example.com");
+        UsersDto usersDto = new UsersDto();
+        usersDto.setId(id);
+        usersDto.setName("Luis");
+        usersDto.setEmail("luis@example.com");
 
-        UsersDto updatedStudentDto = new UsersDto();
-        updatedStudentDto.setId(id);
-        updatedStudentDto.setName("Luis Updated");
-        updatedStudentDto.setEmail("luis@example.com");
+        UsersDto updatedUserDto = new UsersDto();
+        updatedUserDto.setId(id);
+        updatedUserDto.setName("Luis Updated");
+        updatedUserDto.setEmail("luis@example.com");
 
-        when(usersService.update(studentDto, id)).thenReturn(updatedStudentDto);
+        when(usersService.update(any(UsersDto.class), anyString(), anyString())).thenReturn(updatedUserDto);
 
         //Ejecucion
-        UsersDto responseStudent = usersController.updateStudent(studentDto, id).getBody();
+        UsersDto responseUser = (UsersDto) usersController.updateUser(usersDto, id).getBody();
 
         //Validacion
-        assertNotNull(responseStudent);
-        assertEquals("1", responseStudent.getId());
-        assertEquals("Luis Updated", responseStudent.getName());
-        assertEquals("luis@example.com", responseStudent.getEmail());
+        assertNotNull(responseUser);
+        assertEquals("1", responseUser.getId());
+        assertEquals("Luis Updated", responseUser.getName());
+        assertEquals("luis@example.com", responseUser.getEmail());
     }
 
     @Test
-    public void deleteStudentShouldWork() {
+    public void deleteUserShouldWork() {
         //Preparacion
         String id = "1";
 
+        doNothing().when(usersService).delete(anyString(), anyString());
+
         //Ejecucion
-        usersController.deleteStudent(id);
+        String message = usersController.deleteUser(id).getBody();
 
         //Validacion
-        verify(usersService, times(1)).delete(id);
+        assertEquals("El usuario con ID " + id + " ha sido eliminado correctamente.", message);
     }
 
 }

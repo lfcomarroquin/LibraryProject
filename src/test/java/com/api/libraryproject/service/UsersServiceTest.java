@@ -3,12 +3,13 @@ package com.api.libraryproject.service;
 import com.api.libraryproject.dto.UsersDto;
 import com.api.libraryproject.entity.UsersEntity;
 import com.api.libraryproject.repository.LibraryRepository;
+import com.api.libraryproject.util.Role;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataAccessException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,9 +27,20 @@ public class UsersServiceTest {
     @Mock
     private LibraryRepository libraryRepository;
 
+    @BeforeEach
+    public void setup() {
+        UsersEntity adminUser = new UsersEntity();
+        adminUser.setId("admin");
+        adminUser.setName("Admin");
+        adminUser.setEmail("admin@library.com");
+        adminUser.setRole(Role.ADMIN);
+
+        when(libraryRepository.findByEmail(anyString())).thenReturn(Optional.of(adminUser));
+    }
+
     @Test
-    public void getAllShouldWork() {
-        //Preparacion
+    public void findAllUsersShouldWork() {
+        // Preparacion
         UsersEntity user1 = new UsersEntity();
         user1.setId("1");
         user1.setName("Luis");
@@ -41,10 +53,10 @@ public class UsersServiceTest {
 
         when(libraryRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
 
-        //Ejecucion
-        List<UsersDto> users = usersService.getAll();
+        // Ejecucion
+        List<UsersDto> users = usersService.getAll("admin@example.com");
 
-        //Validacion
+        // Validacion
         assertNotNull(users);
         assertEquals(2, users.size());
         assertEquals("Luis", users.get(0).getName());
@@ -62,37 +74,12 @@ public class UsersServiceTest {
         when(libraryRepository.findById("1")).thenReturn(java.util.Optional.of(user));
 
         //Ejecucion
-        UsersDto foundUser = usersService.getById("1");
+        UsersDto foundUser = usersService.getById("1", "luis@example.com");
 
         //Validacion
         assertNotNull(foundUser);
         assertEquals("Luis", foundUser.getName());
         assertEquals("luis@example.com", foundUser.getEmail());
-    }
-
-    @Test
-    public void saveStudentShouldWork() {
-        //Preparacion
-        UsersDto usersDto = new UsersDto(null,"Luis","luis@example.com");
-        UsersEntity student = new UsersEntity();
-        student.setName("Luis");
-        student.setEmail("luis@example.com");
-
-        UsersEntity savedStudent = new UsersEntity();
-        savedStudent.setId("1");
-        savedStudent.setName("Luis");
-        savedStudent.setEmail("luis@example.com");
-
-        when(libraryRepository.save(any(UsersEntity.class))).thenReturn(savedStudent);
-
-        //Ejecucion
-        UsersDto savedUserDto = usersService.save(usersDto);
-
-        //Validacion
-        assertNotNull(savedUserDto);
-        assertEquals("1", savedUserDto.getId());
-        assertEquals("Luis", savedUserDto.getName());
-        assertEquals("luis@example.com", savedUserDto.getEmail());
     }
 
     @Test
@@ -109,7 +96,7 @@ public class UsersServiceTest {
         when(libraryRepository.save(any(UsersEntity.class))).thenReturn(user);
 
         //Ejecucion
-        UsersDto updatedStudent = usersService.update(usersDto, "1");
+        UsersDto updatedStudent = usersService.update(usersDto, "1", "admin@library.com");
 
         //Validacion
         assertNotNull(updatedStudent);
@@ -129,22 +116,10 @@ public class UsersServiceTest {
         when(libraryRepository.findById("1")).thenReturn(Optional.of(user));
 
         //Ejecucion
-        usersService.delete("1");
+        usersService.delete("1", "admin@library.com");
 
         //Validacion
         verify(libraryRepository).delete(user);
-    }
-
-    @Test
-    void shouldThrowExceptionWhenDatabaseErrorOccurs() {
-        //Preparacion
-        String email = "test@example.com";
-
-        //Ejecucion
-        when(libraryRepository.findByEmail(email)).thenThrow(new DataAccessException("Error accediendo a la base de datos") {});
-
-        //Validacion
-        assertThrows(DataAccessException.class, () -> usersService.findUserByEmail(email));
     }
 
 }

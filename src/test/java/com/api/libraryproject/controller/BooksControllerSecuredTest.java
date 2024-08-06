@@ -12,16 +12,19 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,12 +44,12 @@ public class BooksControllerSecuredTest {
         SecurityContext securityContext = Mockito.mock(SecurityContext.class);
         Authentication authentication = Mockito.mock(Authentication.class);
         UsersEntity user = new UsersEntity();
+        user.setName("admin");
         user.setEmail("admin@library.com");
         user.setRole(Role.ADMIN);
         Mockito.when(authentication.getPrincipal()).thenReturn(new User(user.getEmail(), "", new ArrayList<>()));
         Mockito.when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
-        Mockito.when(libraryRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
     }
 
     @Test
@@ -60,9 +63,9 @@ public class BooksControllerSecuredTest {
         savedBookDto.setTitle("Book Title");
         savedBookDto.setAuthor("Author");
 
-        when(booksService.addBook(bookDto)).thenReturn(savedBookDto);
+        when(booksService.addBook(any(BooksDto.class), anyString())).thenReturn(savedBookDto);
 
-        BooksDto savedBook = booksController.createBook(bookDto).getBody();
+        BooksDto savedBook = (BooksDto) booksController.createBook(bookDto).getBody();
 
         assertNotNull(savedBook);
         assertEquals("1", savedBook.getBookId());
@@ -71,8 +74,7 @@ public class BooksControllerSecuredTest {
     }
 
     @Test
-    public void updateBookStatusShouldWork () {
-        // Asumiendo que la configuración de seguridad y roles está realizada para las pruebas
+    public void updateBookStatusShouldWork() {
         String id = "1";
         BooksDto bookDto = new BooksDto();
         bookDto.setBookId(id);
@@ -86,9 +88,22 @@ public class BooksControllerSecuredTest {
         updatedBookDto.setAuthor("Author Updated");
         updatedBookDto.setStatus("RESERVADO");
 
-        when(booksService.updateBookStatus(id, bookDto)).thenReturn(updatedBookDto);
+        UsersEntity userEntity = new UsersEntity();
+        userEntity.setName("admin");
+        userEntity.setEmail("admin@library.com");
+        userEntity.setRole(Role.ADMIN);
 
-        BooksDto responseBook = booksController.updateBookStatus(id, bookDto).getBody();
+        UserDetails mockUserDetails = User.builder()
+                .username("admin@library.com")
+                .password("")
+                .authorities(new ArrayList<>())
+                .build();
+
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(mockUserDetails, null));
+        when(libraryRepository.findByEmail(mockUserDetails.getUsername())).thenReturn(Optional.of(userEntity));
+        when(booksService.updateBookStatus(eq(id), any(BooksDto.class), any(UsersEntity.class))).thenReturn(updatedBookDto);
+
+        BooksDto responseBook = (BooksDto) booksController.updateBookStatus(id, bookDto).getBody();
 
         assertNotNull(responseBook);
         assertEquals("1", responseBook.getBookId());
@@ -96,4 +111,5 @@ public class BooksControllerSecuredTest {
         assertEquals("Author Updated", responseBook.getAuthor());
         assertEquals("RESERVADO", responseBook.getStatus());
     }
+
 }

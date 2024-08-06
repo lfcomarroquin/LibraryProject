@@ -55,7 +55,7 @@ public class BooksControllerUnsecuredTest {
 
         when(booksService.getBookById("1")).thenReturn(book);
 
-        BooksDto foundBook = booksController.findBookById("1").getBody();
+        BooksDto foundBook = (BooksDto) booksController.findBookById("1").getBody();
 
         assertNotNull(foundBook);
         assertEquals("Book Title", foundBook.getTitle());
