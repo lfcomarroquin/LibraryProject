@@ -51,7 +51,12 @@ public class AuthService {
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.USER);
+
+        if (request.getEmail().endsWith("@library.com")){
+            user.setRole(Role.ADMIN);
+        } else {
+            user.setRole(Role.USER);
+        }
 
         libraryRepository.save(user);
         return new AuthDto("El usuario ha sido creado exitosamente");
